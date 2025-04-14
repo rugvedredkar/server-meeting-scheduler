@@ -77,6 +77,13 @@ class db:
             conn.commit()
             return user_id
 
+    def get_user_name_by_id(self, user_id):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT username FROM users WHERE id = ?', (user_id,))
+            result = cursor.fetchone()
+            return result[0] if result else False
+        
     def get_user_by_email(self, email):
         with self.connect() as conn:
             cursor = conn.cursor()
@@ -105,14 +112,14 @@ class db:
             conn.commit()
             return friendship_id
 
-    def create_event(self, user_id, title, description, start_time, end_time, location):
+    def create_event(self, user_id, title, description, date, time, location):
         with self.connect() as conn:
             cursor = conn.cursor()
             event_id = str(uuid.uuid4())
             cursor.execute('''
-            INSERT INTO events (id, user_id, title, description, start_time, end_time, location)
+            INSERT INTO events (id, user_id, title, description, date, time, location)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (event_id, user_id, title, description, start_time, end_time, location))
+            ''', (event_id, user_id, title, description, date, time, location))
             conn.commit()
             return event_id
 

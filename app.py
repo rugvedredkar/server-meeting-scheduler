@@ -48,46 +48,34 @@ def login():
         "virgin" : virgin
     })
 
-
-
-@app.route("/get-events")
+@app.route("/events")
 @require_auth
 def get_user_events():
     """Gets user events"""
     user_info = g.user
     google_sub = user_info.get("sub")
-
+    user_name = db.get_user_name_by_id(google_sub)
     events = db.get_user_events(google_sub)
 
     pprint(events)
 
+    events_list = []
+
+    for event_id, _, title, desc, data, time, venue in events:
+
+        events_list.append({
+            'id': event_id,
+            'title': title,
+            'user': user_name,
+            'description': desc,
+            'date':data,
+            'time':time,
+            'venue':venue
+        })
+    
     return jsonify({
-        "events" : [
-            {
-                'id': 1,
-                'title': 'Team Standup',
-                'with': 'Alex Smith',
-                'date': '2025-04-15',
-                'time': '09:00 AM'
-            },
-            {
-                'id': 2,
-                'title': 'Team Standup',
-                'with': 'Alex Smith',
-                'date': '2025-04-15',
-                'time': '09:00 AM'
-            },
-            {
-                'id': 3,
-                'title': 'Team Standup',
-                'with': 'Alex Smith',
-                'date': '2025-04-15',
-                'time': '09:00 AM'
-            },
-        ]
+        "events" : events_list
     })
-
-
 
 @app.route("/get_friends")
 @require_auth
@@ -99,10 +87,6 @@ def get_user_friends():
     # friends = db.get_user_friends(google_sub)
 
     # return jsonify
-
-    pass
-
-
 
 @app.route("/add-friend-request")
 def send_friends_request():
