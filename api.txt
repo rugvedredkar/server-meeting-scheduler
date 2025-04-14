@@ -1,0 +1,83 @@
+/friends-availability 
+[
+    {
+        "date": "2025-04-16",
+        "id": "c756e17c-35f1-46ed-9485-71f9645afe0d",
+        "time": "10:00",
+    },
+    {
+        "date": "2025-05-05",
+        "id": "f079e418-f556-4c1a-8f56-d7c82046c8d1",
+        "time": "12:00"
+    },
+    {
+        "date": "2025-04-17",
+        "id": "0693a73f-5c67-45b0-86fa-57ec482906ae",
+        "time": "15:00",
+    }
+]
+
+/suggested-friends
+
+gets suggested friends for the user, 5 to 6 friends of friends
+
+[
+    { id: 4, name: 'Robin Chen', email: 'robin.chen@example.com' },
+    { id: 5, name: 'Morgan Lee', email: 'morgan.lee@example.com' },
+    { id: 6, name: 'Casey Taylor', email: 'casey.taylor@example.com' }
+]
+
+/searched-freinds
+
+takes search query and matches it with email or name and returs users in db
+in following schema
+
+[
+    { id: 4, name: 'Robin Chen', email: 'robin.chen@example.com' },
+    { id: 5, name: 'Morgan Lee', email: 'morgan.lee@example.com' },
+    { id: 6, name: 'Casey Taylor', email: 'casey.taylor@example.com' }
+]
+
+/friends
+
+
+/events
+
+gets events for user
+
+[
+    {
+        "date": "2025-04-16",
+        "description": "Description for Project Review",
+        "id": "c756e17c-35f1-46ed-9485-71f9645afe0d",
+        "time": "10:00",
+        "title": "Project Review",
+        "user": "labhansh",
+        "venue": "Office 101"
+    },
+    {
+        "date": "2025-04-17",
+        "description": "Description for Workshop",
+        "id": "0693a73f-5c67-45b0-86fa-57ec482906ae",
+        "time": "15:00",
+        "title": "Workshop",
+        "user": "labhansh",
+        "venue": "Office 101"
+    }
+]
+
+/friend-requests
+
+get pending friend requests 
+
+[
+    { id: 4, name: 'Robin Chen', email: 'robin.chen@example.com' },
+    { id: 5, name: 'Morgan Lee', email: 'morgan.lee@example.com' },
+    { id: 6, name: 'Casey Taylor', email: 'casey.taylor@example.com' }
+]
+
+
+
+
+
+
