@@ -88,22 +88,17 @@ def get_user_friends():
 
     # return jsonify
 
-@app.route("/add-friend-request")
-def send_friends_request():
-    """Adds a freinds request from current user to other user"""
+# @app.route("/add-friend-request")
+# def send_friends_request():
+#     """Adds a freinds request from current user to other user"""
 
-    pass
+#     pass
 
-@app.route("/search-users")
-def search_users():
-    """Takes a serach query and returns users related to that query"""
+# @app.route("/search-users")
+# def search_users():
+#     """Takes a serach query and returns users related to that query"""
 
-    pass
-
-if __name__ == "__main__":
-
-    app.run(port=8080, debug=True, host="0.0.0.0")
-
+#     pass
 
 # added by rugved - 14 Apr
 @app.route("/friends-availability")
@@ -125,6 +120,8 @@ def get_friends_availability():
                 "date": date,
                 "time": time
             })
+
+    pprint(all_availability)
 
     return jsonify(all_availability)
 
@@ -229,3 +226,10 @@ def send_friend_request():
 
     db.create_friend_request(sender_id, receiver_id)
     return jsonify({"message": "Friend request sent"}), 200
+
+
+if __name__ == "__main__":
+
+    app.run(port=8080, debug=True, host="0.0.0.0")
+
+

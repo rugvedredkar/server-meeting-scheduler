@@ -1,4 +1,9 @@
-/friends-availability 
+
+GET
+/friends-availability
+"""Gets the schedule of the freind with friend id"""
+
+Friend Schedule Object
 [
     {
         "date": "2025-04-16",
@@ -17,9 +22,9 @@
     }
 ]
 
+GET
 /suggested-friends
-
-gets suggested friends for the user, 5 to 6 friends of friends
+"""gets suggested friends for the user, 5 to 6 friends of friends
 
 [
     { id: 4, name: 'Robin Chen', email: 'robin.chen@example.com' },
