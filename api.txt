@@ -40,6 +40,13 @@ in following schema
 
 /friends
 
+gets users friends 
+
+[
+    { id: 4, name: 'Robin Chen', email: 'robin.chen@example.com' },
+    { id: 5, name: 'Morgan Lee', email: 'morgan.lee@example.com' },
+    { id: 6, name: 'Casey Taylor', email: 'casey.taylor@example.com' }
+]
 
 /events
 
