@@ -14,10 +14,12 @@ db = db(db_path=db_path)
 
 @app.route("/")
 def index():
-    return "hello from me"
+    return "hello from labhansh"
 
 @app.route("/login", methods=["POST"])
 def login():
+    """Sends user info when user logs in ny verifying if the 
+       user exists in google sessions"""
     data = request.get_json()
     pprint(data)
     token = data.get("id_token")
@@ -48,13 +50,14 @@ def login():
         "virgin" : virgin
     })
 
-@app.route("/events")
+@app.route("/events", methods=["GET"])
 @require_auth
 def get_user_events():
-    """Gets user events"""
+    """Gets list of logged in user events"""
     user_info = g.user
     google_sub = user_info.get("sub")
     user_name = db.get_user_name_by_id(google_sub)
+
     events = db.get_user_events(google_sub)
 
     pprint(events)
@@ -77,77 +80,109 @@ def get_user_events():
         "events" : events_list
     })
 
-@app.route("/get_friends")
-@require_auth
-def get_user_friends():
-    """Gets users friends"""
-    # user_info = g.user
-    # google_sub = user_info.get("sub")
-
-    # friends = db.get_user_friends(google_sub)
-
-    # return jsonify
-
-# @app.route("/add-friend-request")
-# def send_friends_request():
-#     """Adds a freinds request from current user to other user"""
-
-#     pass
-
-# @app.route("/search-users")
-# def search_users():
-#     """Takes a serach query and returns users related to that query"""
-
-#     pass
-
-# added by rugved - 14 Apr
-@app.route("/friends-availability")
+@app.route("/colleagues-availability", methods=["GET"])
 @require_auth
 def get_friends_availability():
-    """Returns all user events (friend availability)"""
+    """Returns all user availability (friend availability)"""
+    user_info = g.user
+    google_sub = user_info.get("sub")
+
+    all_availability = []
+
+    friend_id = request.args.get('colleagues_id')
+    pprint(friend_id)
+
+    availability = db.get_user_events(friend_id)
+    for event in availability:
+        event_id, _, _, _, date, time, _ = event
+        all_availability.append({
+            "id": event_id,
+            "date": date,
+            "time": time
+        })
+
+    pprint(all_availability)
+    return jsonify(all_availability)
+
+@app.route("/friends", methods=["GET"])
+@require_auth
+def friends():
+    """Get current user's friends"""
     user_info = g.user
     google_sub = user_info.get("sub")
     friends = db.get_user_friends(google_sub)
 
-    all_availability = []
-    for friend in friends:
-        friend_id, name, email, *_ = friend
-        events = db.get_user_events(friend_id)
-        for event in events:
-            event_id, _, _, _, date, time, _ = event
-            all_availability.append({
-                "id": event_id,
-                "date": date,
-                "time": time
-            })
+    return jsonify([{
+        "id": f[0],
+        "name": f[1],
+        "email": f[2]
+    } for f in friends])
 
-    pprint(all_availability)
+@app.route("/recents", methods=["GET"])
+@require_auth
+def recents():
+    """Gets other users with whom the logged in user
+       booked meetings with"""
+    
+    user_info = g.user
+    google_sub = user_info.get("sub")
 
-    return jsonify(all_availability)
+    events = db.get_user_events(google_sub);
+    atendees_res = {}
+
+    for event_id, _, _, _, _, _, _ in events:
+        atendees = db.get_event_atendees(event_id)
+        for atendee in atendees: 
+            if atendee != google_sub:
+                if atendee not in atendees_res:
+                    atendees_res[atendee] = 1
+                else:
+                    atendees_res[atendee] += 1
+    
+    recents = []
+
+    for attendee_id in atendees_res.keys():
+        attendee = db.get_user_by_id(attendee_id)
+        pprint(attendee)
+
+        recents.append({
+            "id": attendee[0],
+            "name": attendee[1],
+            "email": attendee[2]
+        })
+
+    return jsonify(recents)
+
 
 
 @app.route("/suggested-friends")
 @require_auth
 def suggested_friends():
-    """Returns 5–6 friends of friends as suggested users"""
+    """Returns quantity number of friends of friends as suggested users"""
     user_info = g.user
     user_id = user_info.get("sub")
+
+    quantity = int(request.args.get("quantity", 6))
 
     direct_friends = db.get_user_friends(user_id)
     direct_ids = [f[0] for f in direct_friends]
 
+    # Build set of suggested friends
     suggested = set()
     for fid in direct_ids:
         friends_of_friends = db.get_user_friends(fid)
         for fof in friends_of_friends:
+            # Only add if not the user and not already a friend
             if fof[0] != user_id and fof[0] not in direct_ids:
                 suggested.add((fof[0], fof[1], fof[2]))
 
-    suggestions = list(suggested)[:6]
+    # Limit results to requested quantity
+    suggestions = list(suggested)[:quantity]
     result = [{"id": id, "name": name, "email": email} for id, name, email in suggestions]
 
     return jsonify(result)
 
+# ======= #
 
 @app.route("/search-users")
 @require_auth
@@ -166,21 +201,6 @@ def search_users():
         users = cursor.fetchall()
 
     return jsonify([{"id": u[0], "name": u[1], "email": u[2]} for u in users])
-
-
-@app.route("/friends")
-@require_auth
-def friends():
-    """Get current user's friends"""
-    user_info = g.user
-    google_sub = user_info.get("sub")
-    friends = db.get_user_friends(google_sub)
-
-    return jsonify([{
-        "id": f[0],
-        "name": f[1],
-        "email": f[2]
-    } for f in friends])
 
 
 @app.route("/friend-requests")

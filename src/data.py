@@ -76,6 +76,14 @@ class db:
             ''', (user_id, username, email, provider))
             conn.commit()
             return user_id
+        
+    def get_user_by_id(self, user_id):
+
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+            result = cursor.fetchone()
+            return result if result else False
 
     def get_user_name_by_id(self, user_id):
         with self.connect() as conn:
@@ -122,6 +130,12 @@ class db:
             ''', (event_id, user_id, title, description, date, time, location))
             conn.commit()
             return event_id
+        
+    def get_event_atendees(self, event_id):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT user_id FROM event_attendees WHERE event_id = ?', (event_id,))
+            return [row[0] for row in cursor.fetchall()]
 
     def add_event_attendee(self, event_id, user_id):
         with self.connect() as conn:
