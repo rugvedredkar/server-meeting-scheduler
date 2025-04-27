@@ -70,14 +70,14 @@ class db:
             conn.commit()
 
     ### =========== USER ========== ####
-    def create_user(self, user_id, username, email, provider='google'):
+    def create_user(self, user_id, username, email, picture, provider='google'):
         with self.connect() as conn:
             cursor = conn.cursor()
             # user_id = str(uuid.uuid4())
             cursor.execute('''
-            INSERT INTO users (id, username, email, provider)
-            VALUES (?, ?, ?, ?)
-            ''', (user_id, username, email, provider))
+            INSERT INTO users (id, username, email, picture, provider)
+            VALUES (?, ?, ?, ?, ?)
+            ''', (user_id, username, email, picture, provider))
             conn.commit()
             return user_id
         
@@ -134,6 +134,55 @@ class db:
             ''', (friendship_id, user1_id, user2_id))
             conn.commit()
             return friendship_id
+
+    def remove_friendship(self, user1_id, user2_id):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                DELETE FROM friendships
+                WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)
+            ''', (user1_id, user2_id, user2_id, user1_id))
+            conn.commit()
+
+    def cancel_friend_request(self, sender_id, receiver_id):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                DELETE FROM friend_requests
+                WHERE sender_id = ? AND receiver_id = ? AND status = 'pending'
+            ''', (sender_id, receiver_id))
+            conn.commit()
+
+    def accept_friend_request(self, sender_id, receiver_id):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            # Update friend request status
+            cursor.execute('''
+                UPDATE friend_requests
+                SET status = 'accepted'
+                WHERE sender_id = ? AND receiver_id = ? AND status = 'pending'
+            ''', (sender_id, receiver_id))
+
+            # Create a friendship
+            friendship_id = str(uuid.uuid4())
+            cursor.execute('''
+                INSERT INTO friendships (id, user1_id, user2_id)
+                VALUES (?, ?, ?)
+            ''', (friendship_id, sender_id, receiver_id))
+
+            conn.commit()
+            return friendship_id
+
+    def reject_friend_request(self, sender_id, receiver_id):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE friend_requests
+                SET status = 'rejected'
+                WHERE sender_id = ? AND receiver_id = ? AND status = 'pending'
+            ''', (sender_id, receiver_id))
+            conn.commit()
+
 
     ### ========== EVENTS ========= ###
     def get_user_events(self, user_id):
