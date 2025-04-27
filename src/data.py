@@ -16,8 +16,9 @@ class db:
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
+                username TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
+                picture TEXT NOT NULL,
                 provider TEXT NOT NULL,
                 createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )''')
@@ -48,6 +49,7 @@ class db:
                 id TEXT PRIMARY KEY,
                 user_id TEXT NOT NULL,
                 title TEXT NOT NULL,
+                meeting_status TEXT NOT NULL,
                 description TEXT,
                 date TEXT,
                 time TEXT,
@@ -60,12 +62,14 @@ class db:
                 id TEXT PRIMARY KEY,
                 event_id TEXT NOT NULL,
                 user_id TEXT NOT NULL,
+                request_status TEXT NOT NULL,
                 FOREIGN KEY (event_id) REFERENCES events (id),
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )''')
 
             conn.commit()
 
+    ### =========== USER ========== ####
     def create_user(self, user_id, username, email, provider='google'):
         with self.connect() as conn:
             cursor = conn.cursor()
@@ -98,6 +102,17 @@ class db:
             cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
             return cursor.fetchone() or False
 
+    ### ======= FRIENDSHIPS ========= ###
+    def get_user_friends(self, user_id):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+            SELECT u.* FROM users u
+            INNER JOIN friendships f ON (f.user1_id = u.id OR f.user2_id = u.id)
+            WHERE (f.user1_id = ? OR f.user2_id = ?) AND u.id != ?
+            ''', (user_id, user_id, user_id))
+            return cursor.fetchall()
+        
     def create_friend_request(self, sender_id, receiver_id):
         with self.connect() as conn:
             cursor = conn.cursor()
@@ -120,6 +135,13 @@ class db:
             conn.commit()
             return friendship_id
 
+    ### ========== EVENTS ========= ###
+    def get_user_events(self, user_id):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM events WHERE user_id = ?', (user_id,))
+            return cursor.fetchall()
+        
     def create_event(self, user_id, title, description, date, time, location):
         with self.connect() as conn:
             cursor = conn.cursor()
@@ -130,7 +152,8 @@ class db:
             ''', (event_id, user_id, title, description, date, time, location))
             conn.commit()
             return event_id
-        
+
+    ## EVENT ATENDEES ## 
     def get_event_atendees(self, event_id):
         with self.connect() as conn:
             cursor = conn.cursor()
@@ -147,22 +170,6 @@ class db:
             ''', (attendee_id, event_id, user_id))
             conn.commit()
             return attendee_id
-
-    def get_user_events(self, user_id):
-        with self.connect() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM events WHERE user_id = ?', (user_id,))
-            return cursor.fetchall()
-
-    def get_user_friends(self, user_id):
-        with self.connect() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-            SELECT u.* FROM users u
-            INNER JOIN friendships f ON (f.user1_id = u.id OR f.user2_id = u.id)
-            WHERE (f.user1_id = ? OR f.user2_id = ?) AND u.id != ?
-            ''', (user_id, user_id, user_id))
-            return cursor.fetchall()
         
 
 if __name__ == "__main__":

@@ -64,14 +64,15 @@ def get_user_events():
 
     events_list = []
 
-    for event_id, _, title, desc, data, time, venue in events:
+    for event_id, _, title, status, desc, date, time, venue in events:
 
         events_list.append({
             'id': event_id,
             'title': title,
+            'meeting_status': status,
             'user': user_name,
             'description': desc,
-            'date':data,
+            'date':date,
             'time':time,
             'venue':venue
         })
@@ -94,7 +95,8 @@ def get_friends_availability():
 
     availability = db.get_user_events(friend_id)
     for event in availability:
-        event_id, _, _, _, date, time, _ = event
+        event_id, _, _, status, _, date, time, _ = event
+        # if status == 'CONFIRMED':
         all_availability.append({
             "id": event_id,
             "date": date,
@@ -112,6 +114,7 @@ def friends():
     google_sub = user_info.get("sub")
     friends = db.get_user_friends(google_sub)
 
+    pprint(friends)
     return jsonify([{
         "id": f[0],
         "name": f[1],
@@ -130,7 +133,7 @@ def recents():
     events = db.get_user_events(google_sub);
     atendees_res = {}
 
-    for event_id, _, _, _, _, _, _ in events:
+    for event_id, _, _, _, _, _, _, _ in events:
         atendees = db.get_event_atendees(event_id)
         for atendee in atendees: 
             if atendee != google_sub:
@@ -200,7 +203,7 @@ def search_users():
         ''', (f"%{query}%", f"%{query}%"))
         users = cursor.fetchall()
 
-    return jsonify([{"id": u[0], "name": u[1], "email": u[2]} for u in users])
+    return jsonify([{"id": u[0], "name": u[1], "email": u[2], "picture": u[3]} for u in users])
 
 
 @app.route("/friend-requests")
