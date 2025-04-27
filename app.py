@@ -187,11 +187,12 @@ def suggested_friends():
 
 # ======= #
 
-@app.route("/search-users")
+@app.route("/search-users", methods=["GET"])
 @require_auth
 def search_users():
     """Search by name or email"""
-    query = request.args.get("q", "").lower()
+    query = request.args.get("query")
+    pprint(query)
     if not query:
         return jsonify([])
 
@@ -203,7 +204,7 @@ def search_users():
         ''', (f"%{query}%", f"%{query}%"))
         users = cursor.fetchall()
 
-    return jsonify([{"id": u[0], "name": u[1], "email": u[2], "picture": u[3]} for u in users])
+    return jsonify([{"id": u[0], "name": u[1], "email": u[2]} for u in users])
 
 
 @app.route("/friend-requests")
