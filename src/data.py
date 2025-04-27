@@ -141,7 +141,14 @@ class db:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM events WHERE user_id = ?', (user_id,))
             return cursor.fetchall()
-        
+    
+    def get_event_by_id(self, event_id):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM events WHERE id = ?', (event_id,))
+            result = cursor.fetchone()
+            return result if result else False
+    
     def create_event(self, user_id, title, description, date, time, location):
         with self.connect() as conn:
             cursor = conn.cursor()
@@ -152,6 +159,16 @@ class db:
             ''', (event_id, user_id, title, description, date, time, location))
             conn.commit()
             return event_id
+        
+    def get_pending_or_rejected_events_for_user(self, user_id):
+        with self.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT event_id FROM event_attendees
+                WHERE user_id = ?
+                AND (request_status = 'REQUESTED' OR request_status = 'REJECTED')
+            ''', (user_id,))
+            return [row[0] for row in cursor.fetchall()]
 
     ## EVENT ATENDEES ## 
     def get_event_atendees(self, event_id):

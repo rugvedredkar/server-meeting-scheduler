@@ -81,6 +81,38 @@ def get_user_events():
         "events" : events_list
     })
 
+@app.route("/event-requests", methods=["GET"])
+@require_auth
+def get_pending_or_rejected_events():
+    """Gets list of events where the logged-in user is an attendee with REQUESTED or REJECTED status"""
+    user_info = g.user
+    google_sub = user_info.get("sub")
+    user_name = db.get_user_name_by_id(google_sub)
+
+    event_ids = db.get_pending_or_rejected_events_for_user(google_sub)
+
+    events_list = []
+
+    for event_id in event_ids:
+        event = db.get_event_by_id(event_id)
+        if event:
+            eid, owner_id, title, meeting_status, desc, date, time, venue = event
+
+            events_list.append({
+                'id': eid,
+                'title': title,
+                'meeting_status': meeting_status,
+                'user': user_name,  # you could optionally show event owner's name if needed
+                'description': desc,
+                'date': date,
+                'time': time,
+                'venue': venue
+            })
+
+    return jsonify({
+        "events": events_list
+    })
+
 @app.route("/colleagues-availability", methods=["GET"])
 @require_auth
 def get_friends_availability():
@@ -185,12 +217,13 @@ def suggested_friends():
 
     return jsonify(result)
 
-# ======= #
-
 @app.route("/search-users", methods=["GET"])
 @require_auth
 def search_users():
     """Search by name or email"""
+    user_info = g.user
+    user_id = user_info.get("sub")
+
     query = request.args.get("query")
     pprint(query)
     if not query:
@@ -206,8 +239,7 @@ def search_users():
 
     return jsonify([{"id": u[0], "name": u[1], "email": u[2]} for u in users])
 
-
-@app.route("/friend-requests")
+@app.route("/friend-requests", methods=["GET"])
 @require_auth
 def pending_friend_requests():
     """Returns all pending friend requests for the user"""
@@ -226,6 +258,7 @@ def pending_friend_requests():
 
     return jsonify([{"id": r[0], "name": r[1], "email": r[2]} for r in requests])
 
+# ======= #
 
 @app.route("/add-friend-request", methods=["POST"])
 @require_auth
