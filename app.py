@@ -99,7 +99,7 @@ def get_user_events():
 
     events_list = []
 
-    for event_id, _, title, status, desc, date, time, venue in events:
+    for event_id, owner_id, title, status, desc, date, time, venue in events:
         # Get attendees for this event
         attendees = db.get_event_atendees(event_id)
         attendees = [attendee for attendee in attendees if attendee != google_sub]
@@ -108,7 +108,7 @@ def get_user_events():
             'id': event_id,
             'title': title,
             'meeting_status': status,
-            'user': user_name,
+            'user': owner_id,
             'description': desc,
             'date': date,
             'time': time,
@@ -187,7 +187,7 @@ def get_pending_or_rejected_events():
             eid, owner_id, title, meeting_status, desc, date, time, venue = event
 
             # Get event owner's name
-            owner_name = db.get_user_name_by_id(owner_id)
+            # owner_name = db.get_user_name_by_id(owner_id)
 
             # Get attendees for this event (excluding self)
             attendees = db.get_event_atendees(eid)
@@ -198,7 +198,7 @@ def get_pending_or_rejected_events():
                     'id': eid,
                     'title': title,
                     'meeting_status': meeting_status,
-                    'user': owner_name,
+                    'user': owner_id,
                     'description': desc,
                     'date': date,
                     'time': time,
