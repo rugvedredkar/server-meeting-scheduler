@@ -15,7 +15,7 @@ db = db(db_path=db_path)
 
 @app.route("/")
 def index():
-    return "hello from labhansh 2"
+    return "hello from labhansh 3"
 
 @app.route("/login", methods=["POST"])
 def login():
