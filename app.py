@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, render_template_string
 from flask_cors import CORS
 from pathlib import Path
 from pprint import pprint
@@ -243,17 +243,17 @@ def get_event_attendee_status():
                 ''', (user_id,))
                 user = cursor.fetchone()
 
-            if user and user_id != google_sub:
-                attendee_list.append({
-                    "user_id": user_id,
-                    "status": status,
-                    "user": {
-                        "id": user[0],
-                        "name": user[1],
-                        "email": user[2],
-                        "picture": user[3]
-                    }
-                })
+            # if user and user_id != google_sub:
+            attendee_list.append({
+                "user_id": user_id,
+                "status": status,
+                "user": {
+                    "id": user[0],
+                    "name": user[1],
+                    "email": user[2],
+                    "picture": user[3]
+                }
+            })
 
         return jsonify({"attendees": attendee_list}), 200
 
@@ -674,6 +674,73 @@ def get_friend_status():
     except Exception as e:
         print(f"Error checking friend status: {e}")
         return jsonify({"error": "Internal server error"}), 500
+    
+@app.route("/admin/database", methods=["GET"])
+def view_database():
+    """Admin view to display all database tables and their data"""
+    tables = ["users", "friend_requests", "friendships", "events", "event_attendees"]
+    db_data = {}
+
+    try:
+        with db.connect() as conn:
+            cursor = conn.cursor()
+            for table in tables:
+                cursor.execute(f"SELECT * FROM {table}")
+                columns = [description[0] for description in cursor.description]
+                rows = cursor.fetchall()
+                db_data[table] = {
+                    "columns": columns,
+                    "rows": rows
+                }
+    except Exception as e:
+        print(f"Error fetching database info: {e}")
+        return f"Internal server error: {e}", 500
+
+    html_template = '''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Database View</title>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { margin-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .table-container { margin-bottom: 50px; }
+        </style>
+    </head>
+    <body>
+        <h1>Database Tables</h1>
+        {% for table_name, table_data in db_data.items() %}
+            <div class="table-container">
+                <h2>{{ table_name }}</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            {% for col in table_data.columns %}
+                                <th>{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in table_data.rows %}
+                            <tr>
+                                {% for cell in row %}
+                                    <td>{{ cell }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endfor %}
+    </body>
+    </html>
+    '''
+
+    return render_template_string(html_template, db_data=db_data)
 
 
 
