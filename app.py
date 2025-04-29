@@ -87,6 +87,78 @@ def get_user_info():
 
 
 """=========EVENTS APIS=========="""
+
+@app.route("/user-events", methods=["GET"])
+@require_auth
+def get_user_related_events():
+    """Gets all events: created by user OR where user is an attendee."""
+    user_info = g.user
+    google_sub = user_info.get("sub")
+
+    events_list = []
+
+    try:
+        with db.connect() as conn:
+            cursor = conn.cursor()
+
+            # Fetch events where user is the owner
+            cursor.execute('''
+                SELECT id, user_id, title, meeting_status, description, date, time, location
+                FROM events
+                WHERE user_id = ?
+            ''', (google_sub,))
+            owned_events = cursor.fetchall()
+
+            # Fetch events where user is an attendee (based on event_attendees)
+            cursor.execute('''
+                SELECT e.id, e.user_id, e.title, e.meeting_status, e.description, e.date, e.time, e.location
+                FROM events e
+                INNER JOIN event_attendees ea ON e.id = ea.event_id
+                WHERE ea.user_id = ?
+            ''', (google_sub,))
+            attending_events = cursor.fetchall()
+
+            # Combine both sets
+            all_events = owned_events + attending_events
+
+            # De-duplicate if somehow user is both creator and attendee
+            seen = set()
+            unique_events = []
+            for event in all_events:
+                if event[0] not in seen:
+                    unique_events.append(event)
+                    seen.add(event[0])
+
+            # Build event list with attendees (excluding self)
+            for event_id, owner_id, title, meeting_status, description, date, time, location in unique_events:
+                cursor.execute('''
+                    SELECT user_id FROM event_attendees
+                    WHERE event_id = ?
+                ''', (event_id,))
+                attendees = [row[0] for row in cursor.fetchall()]
+                attendees = [attendee for attendee in attendees if attendee != google_sub]
+
+                events_list.append({
+                    "id": event_id,
+                    "title": title,
+                    "meeting_status": meeting_status,
+                    "user": owner_id,  # Very important: owner_id, not user_name
+                    "description": description,
+                    "date": date,
+                    "time": time,
+                    "venue": location,
+                    "attendees": attendees
+                })
+
+        return jsonify({
+            "events": events_list
+        }), 200
+
+    except Exception as e:
+        print(f"Error fetching user events: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
 @app.route("/events", methods=["GET"])
 @require_auth
 def get_user_events():
@@ -152,14 +224,15 @@ def create_event():
             conn.commit()
 
         for attendee_id in attendees:
-            attendee_uuid = str(uuid.uuid4())
-            with db.connect() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO event_attendees (id, event_id, user_id, request_status)
-                    VALUES (?, ?, ?, ?)
-                ''', (attendee_uuid, event_id, attendee_id, 'REQUESTED'))
-                conn.commit()
+            if attendee_id != google_sub:
+                attendee_uuid = str(uuid.uuid4())
+                with db.connect() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        INSERT INTO event_attendees (id, event_id, user_id, request_status)
+                        VALUES (?, ?, ?, ?)
+                    ''', (attendee_uuid, event_id, attendee_id, 'REQUESTED'))
+                    conn.commit()
 
         return jsonify({
             "message": "Event created successfully",
