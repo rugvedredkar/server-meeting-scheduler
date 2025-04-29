@@ -193,18 +193,19 @@ def get_pending_or_rejected_events():
             attendees = db.get_event_atendees(eid)
             attendees = [attendee for attendee in attendees if attendee != google_sub]
 
-            if owner_id != google_sub:
-                events_list.append({
-                    'id': eid,
-                    'title': title,
-                    'meeting_status': meeting_status,
-                    'user': owner_id,
-                    'description': desc,
-                    'date': date,
-                    'time': time,
-                    'venue': venue,
-                    'attendees': attendees
-                })
+            # if owner_id != google_sub:
+            ### TO DO ### verifies based on logged in user not owner
+            events_list.append({
+                'id': eid,
+                'title': title,
+                'meeting_status': meeting_status,
+                'user': owner_id,
+                'description': desc,
+                'date': date,
+                'time': time,
+                'venue': venue,
+                'attendees': attendees
+            })
 
     return jsonify({
         "events": events_list
